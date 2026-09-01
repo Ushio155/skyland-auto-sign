@@ -1,8 +1,9 @@
-# run skyland.py
+# run src/main.py (支持明日方舟官服/B服 + 终末地签到)
 name: Auto Sign
 on:
   schedule:
-    - cron: '0 1 * * *'
+    # 每天北京时间 01:00（GitHub Actions cron 为 UTC，17:00 UTC = 次日 01:00 CST）
+    - cron: '0 17 * * *'
   workflow_dispatch:
 jobs:
   build:
@@ -10,23 +11,22 @@ jobs:
     env:
       TZ: Asia/Shanghai
     steps:
-      - uses: actions/checkout@v2
-      - name: Set up Python 3.8
-        uses: actions/setup-python@v2
+      - uses: actions/checkout@v4
+      - name: Set up Python
+        uses: actions/setup-python@v5
         with:
-          python-version: 3.8
+          python-version: '3.12'
       - name: Install dependencies
         run: |
           python -m pip install --upgrade pip
           pip install -r requirements.txt
-      - name: Run skyland.py
+      - name: Run src/main.py
         env:
           GitHub_Actions: true
-          # 对于多个账号一定会有人机验证问题，且因为是密码，有一定的安全风险
-          # PHONE: ${{ secrets.PHONE }}
-          # PASSWORD: ${{ secrets.PASSWORD }}
           TOKEN: ${{ secrets.TOKEN }}
           SC3_SENDKEY: ${{ secrets.SC3_SENDKEY }}
           SC3_UID: ${{ secrets.SC3_UID }}
+          # 可选仓库变量：设为 on 时，签到出错会让工作流失败并触发 GitHub 邮件提醒
+          EXIT_WHEN_FAIL: ${{ vars.EXIT_WHEN_FAIL }}
         run: |
-          python skyland.py
+          python src/main.py
