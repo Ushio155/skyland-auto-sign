@@ -1,0 +1,29 @@
+# 保活工作流：GitHub 会在仓库连续 60 天没有任何提交活动后自动禁用所有定时任务。
+# 本工作流每 10 天提交一次 .keepalive（内容为时间戳），让仓库始终保持"活跃"，
+# 从而保证 auto_sign.yaml 的每日定时签到不会被系统禁用。
+name: Keepalive
+
+on:
+  schedule:
+    # 每月 1 / 11 / 21 日 03:00 UTC（= 北京时间 11:00），间隔 10 天，60 天限期内有 6 次容错
+    - cron: '0 3 1,11,21 * *'
+  # 也允许手动触发，方便立刻重置"无活动"计时
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  keepalive:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Commit keepalive timestamp
+        run: |
+          set -e
+          date -u '+%Y-%m-%d %H:%M:%S UTC' > .keepalive
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add .keepalive
+          git commit -m "keepalive: $(date -u +%Y-%m-%d)"
+          git push
